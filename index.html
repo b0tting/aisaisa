@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
+    <title>(a == 1 && a == 2 && a == 3)</title>
+
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        .container {
+            margin-top: 5em;
+            padding: 2em;
+            -webkit-box-shadow: 10px 10px 38px 0px rgba(0,0,0,0.29);
+            -moz-box-shadow: 10px 10px 38px 0px rgba(0,0,0,0.29);
+            box-shadow: 10px 10px 38px 0px rgba(0,0,0,0.29);
+            border-radius: 10px;
+        }
+
+        #theCode {
+            border: 1px solid #eee;
+            height: auto;
+        }
+
+        #selectApproach {
+            width:auto;
+        }
+
+    </style>
+</head>
+<body>
+<script src="js/jquery-3.3.1.min.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="lib/codemirror.js"></script>
+<link rel="stylesheet" href="lib/codemirror.css">
+<script src="mode/javascript/javascript.js"></script>
+<div class="container">
+<div id="approach_1" data-name="Objects" class="hidden">// a as an object
+a = {
+  i: 1,
+  valueOf: function () {
+    return a.i++;
+  }
+}
+
+if(a == 1 && a == 2 && a == 3) {
+  document.getElementById("output").innerText = "Absolutely!";
+}</div>
+
+<div id="approach_2" data-name="Unicode approach"  class="hidden">// a unicode
+var a = 1;
+var a‍ = 2; // 1 ZWJ
+var a‍‍ = 3; // 2 ZWJ
+
+if(a == 1 && a‍ == 2 && a‍‍ == 3) {
+     document.getElementById("output").innerText = "Absolutely!";
+}</div>
+
+<div id="approach_3"  data-name="Array methods" class="hidden">// Array methods
+a = [1,2,3];
+a.join = a.shift;
+if(a == 1 && a == 2 && a == 3) {
+    document.getElementById("output").innerText = "Absolutely!";
+}
+</div>
+
+<div id="approach_4" data-name="Unicode variation" class="hidden">// a unicode variation
+var a = 9;
+function if‌(){return true;}
+if‌(a == 1 && a == 2 && a == 3)
+{   // <- zinlose brace moet hier!
+    document.getElementById("output").innerText = "Absolutely!";
+}</div>
+
+<div id="approach_5" data-name="Primitives" class="hidden">// Back to the primitive
+a = {};
+a[Symbol.toPrimitive] = function() { return this.value ? ++this.value : this.value = 1 };
+
+if(a == 1 && a == 2 && a == 3) {
+  document.getElementById("output").innerText = "Absolutely!";
+}</div>
+
+<div id="approach_6" data-name="defineProperty" class="hidden">delete i;
+Object.defineProperty(window, 'a', {
+    configurable: true,
+    get: function() {
+        return typeof(i) !== 'undefined' ? ++i : i = 1;
+    }
+});
+if (a == 1 && a == 2 && a == 3) {
+    document.getElementById("output").innerText = "Absolutely!";
+}
+</div>
+<div id="approach_7" data-name="__defineGetter__" class="hidden">delete a;
+delete i;
+window.__defineGetter__( 'a', function(){
+    return typeof(i) !== 'undefined' ? ++i : i = 1
+});
+
+if( a == 1 && a == 2 && a == 3 ){
+    document.getElementById("output").innerText = "Absolutely!";
+}
+
+</div>
+
+
+    <div id="theCode"></div>
+
+    <div class="progress">
+        <div id="progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
+    </div>
+    Is A is A is A? <span id="output">...</span>
+    <p>
+        <select id ="selectApproach" class="form-control hidden"></select>
+        <button class="btn btn-sm btn-info" onClick="reRun()">Opnieuw!</button>
+    </p>
+</div>
+<script>
+
+    function reRun() {
+        document.getElementById("output").innerText = "...";
+        bar.style.width = "0%";
+        setTimeout(go, 1000)
+    }
+
+    // Thanks StackOverflow!
+    function getRequestParam(name){
+        if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search)) {
+            return decodeURIComponent(name[1]);
+        }
+    }
+
+    // Init de codemirror
+    var myCodeMirror = CodeMirror(document.getElementById("theCode"), {
+        mode:  "javascript",
+        lineNumbers: true,
+        viewportMargin: Infinity
+    });
+
+    function go() {
+        var code = myCodeMirror.getValue();
+        console.log(code);
+        eval(code)
+    }
+
+    function countDown() {
+        bar = document.getElementById("progress");
+        bar.style.width = ((--timer * 100) / maxtimer) + "%";
+
+        if(timer >= 0 ) {
+            setTimeout(countDown, 100)
+        } else {
+            go()
+        }
+    }
+
+    // Vind het juiste voorbeeld en vul codemirror
+    if(getRequestParam("approach")) {
+        var approach = getRequestParam("approach")
+    } else {
+        var approach = "approach_1";
+        divs = document.getElementsByTagName("div");
+        selectbox = document.getElementById("selectApproach");
+        for(i = 0; i < divs.length; i++) {
+            if(divs[i].id.startsWith("approach")) {
+                var option = document.createElement("option")
+                option.value = divs[i].id
+                option.text = divs[i].dataset.name
+                selectbox.add(option)
+            }
+        }
+        selectbox.style.display = "inline";
+        selectbox.addEventListener(
+            'change',
+            function() { myCodeMirror.setValue(document.getElementById(this.options[this.selectedIndex].value).firstChild.data);},
+            false
+        );
+
+    }
+
+    // Ik moet hier de .data gebruiken omdat InnterHTML escaped.
+    myCodeMirror.setValue(document.getElementById(approach).firstChild.data);
+
+    var maxtimer = 40;
+    var timer  = maxtimer;
+    countDown()
+
+</script>
+</body>
+</html>
